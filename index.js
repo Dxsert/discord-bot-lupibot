@@ -6,7 +6,6 @@ const fs = require("fs");
 const { updateStatus } = require("./utils/statusUpdater");
 const farewellHandler = require("./commands/farewell");
 const WHITELISTED_GUILDS = ["757261169151967353", "808836895622037504"];
-const { scheduleMudaePing } = require("../LupiBot/utils/mudaeReminders");
 
 // Création du client
 const client = new Client({
