@@ -56,7 +56,11 @@ module.exports = {
         console.log("✅ Dyno Heroku redémarrée avec succès.");
       } else {
         const text = await response.text();
-        console.error("❌ Échec du redémarrage dyno Heroku:", response.status, text);
+        console.error(
+          "❌ Échec du redémarrage dyno Heroku:",
+          response.status,
+          text
+        );
         await interaction.followUp({
           content: "❌ Impossible de redémarrer la dyno Heroku.",
           ephemeral: true,
@@ -71,5 +75,9 @@ module.exports = {
         });
       }
     }
+    await interaction.client.user.setActivity("RESTARTING", {
+      type: ActivityType.Watching,
+    });
+    setTimeout(() => process.exit(0), 1500);
   },
 };
