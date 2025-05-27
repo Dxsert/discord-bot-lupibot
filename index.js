@@ -1,13 +1,17 @@
-const { Client, GatewayIntentBits, InteractionType, REST, Routes, SlashCommandBuilder } = require('discord.js');
+const {
+  Client,
+  GatewayIntentBits,
+  InteractionType,
+  Collection,
+} = require('discord.js');
 require("dotenv").config();
 const fs = require("fs");
 
-// constation des modules
+// Import modules
 const { updateStatus } = require("./utils/statusUpdater");
-const farewellHandler = require("./commands/farewell");
+const farewellHandler = require("./events/guildMemberRemove");
+const { startAutoCheckup } = require("./utils/autoCheckup");
 const WHITELISTED_GUILDS = ["757261169151967353", "808836895622037504"];
-const { startAutoCheckup, markAsUsed } = require("./utils/autoCheckup");
-
 
 // Création du client
 const client = new Client({
@@ -20,46 +24,58 @@ const client = new Client({
   ],
 });
 
-// Commande slash "hello" (déclaration)
-const helloCommand = new SlashCommandBuilder()
-  .setName('hello')
-  .setDescription('Répond avec Hello, world!')
-  .toJSON();
+// Collection des commandes
+client.commands = new Collection();
 
-const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-
-(async () => {
-  try {
-    console.log('🔄 Déploiement de la commande /hello...');
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: [helloCommand] }
-    );
-    console.log('✅ Commande /hello déployée !');
-  } catch (error) {
-    console.error('❌ Erreur de déploiement des commandes :', error);
+// Chargement des commandes
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+for (const file of commandFiles) {
+  const command = require(`./commands/${file}`);
+  if ('data' in command && 'execute' in command) {
+    client.commands.set(command.data.name, command);
+  } else {
+    console.warn(`⚠️ La commande dans ${file} est invalide (manque 'data' ou 'execute')`);
   }
-})();
+}
 
+// Chargement des événements
 fs.readdirSync("./events").forEach((file) => {
   const event = require(`./events/${file}`);
   console.log(`✅ Chargement de l'événement : ${event.name}`);
-  client.on(event.name, (...args) => event.execute(...args, client));
+  client.on(event.name, (...args) => {
+    try {
+      event.execute(...args, client);
+    } catch (error) {
+      console.error(`Erreur lors de l'exécution de l'event ${event.name} :`, error);
+    }
+  });
 });
 
+// Log des messages
 client.on("messageCreate", (message) => {
   console.log(`Message détecté : ${message.content}`);
 });
 
+// Gestion des interactions slash
 client.on("interactionCreate", async (interaction) => {
   if (interaction.type !== InteractionType.ApplicationCommand) return;
 
-  if (interaction.commandName === 'hello') {
-    await interaction.reply("Hello, world!");
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(`❌ Erreur dans la commande ${interaction.commandName} :`, error);
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({ content: 'Une erreur est survenue.', ephemeral: true });
+    } else {
+      await interaction.reply({ content: 'Une erreur est survenue.', ephemeral: true });
+    }
   }
 });
 
-// Lancement du bot
+// Ready
 client.once("ready", () => {
   console.log(`✅ Bot en ligne en tant que ${client.user.tag}`);
   updateStatus(client);
@@ -67,16 +83,13 @@ client.once("ready", () => {
   startAutoCheckup(client, "1376825133267681300");
 });
 
-// Vérification des serveurs whitelisted
+// Anti-serveurs non whitelisted
 client.on("guildCreate", (guild) => {
   if (!WHITELISTED_GUILDS.includes(guild.id)) {
-    console.log(`❌ Serveur non autorisé détecté : ${guild.name} (${guild.id}). Déconnexion...`);
+    console.log(`❌ Serveur non autorisé : ${guild.name} (${guild.id}). Déconnexion...`);
     guild.leave().catch(console.error);
   }
 });
 
-// Enregistrement des événements
-client.on("guildMemberRemove", farewellHandler);
-
-// Connexion du bot
+// Lancement
 client.login(process.env.TOKEN);
