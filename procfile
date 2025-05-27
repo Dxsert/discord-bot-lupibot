@@ -1,2 +1,1 @@
-web nodemon
-web pm2 start index.js --name "lupi-bot"
+worker: node index.js
