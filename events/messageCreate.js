@@ -3,6 +3,10 @@ module.exports = {
   async execute(message) {
     if (message.author.bot) return;
 
+    // Marque que le bot a été utilisé
+    const { markAsUsed } = require("../utils/autoCheckup");
+    markAsUsed();
+
     const now = new Date();
     const time = now.toTimeString().split(' ')[0]; // HH:MM:SS
     const channelName = message.channel.name || "DM";
