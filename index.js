@@ -75,6 +75,23 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
+// Envoie un message indiquant que le bot a redémarré
+try {
+  if (restartChannelId) {
+    const channel = await client.channels.fetch(restartChannelId);
+    if (channel && channel.isTextBased()) {
+      await channel.send('✅ Le bot a redémarré avec succès !');
+    } else {
+      console.warn("Le salon de redémarrage n'est pas un salon texte ou n'existe pas.");
+    }
+  } else {
+    console.warn("RESTART_CHANNEL_ID non défini.");
+  }
+} catch (error) {
+  console.error("Erreur lors de l'envoi du message de redémarrage :", error);
+}
+
+
 // Ready
 client.once("ready", () => {
   console.log(`✅ Bot en ligne en tant que ${client.user.tag}`);
