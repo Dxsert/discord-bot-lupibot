@@ -20,7 +20,7 @@ module.exports = {
       .setImage(randomGif)
       .setTimestamp()
       .setFooter({
-        text: 'Karma GYAAAAT DAAAAAAM',
+        text: 'Bot fait par @_._dxsert_._',
         iconURL: member.guild.iconURL() || undefined,
       });
 
