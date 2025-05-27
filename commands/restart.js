@@ -1,45 +1,43 @@
-const { SlashCommandBuilder, InteractionResponseFlags } = require('discord.js');
+// commands/restart.js
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const fetch = require('node-fetch');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('restart')
-    .setDescription('Redémarre le bot via Heroku'),
+    .setDescription('Redémarre le bot (Heroku)')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
-    const ownerId = process.env.OWNER_ID;
-    const herokuApiKey = process.env.HEROKU_API_KEY;
-    const appName = process.env.HEROKU_APP_NAME;
-
-    if (interaction.user.id !== ownerId) {
+    if (interaction.user.id !== process.env.OWNER_ID) {
       return interaction.reply({
-        content: '❌ Tu n\'as pas la permission d\'utiliser cette commande.',
-        flags: InteractionResponseFlags.Ephemeral
+        content: '❌ Tu n\'es pas autorisé à redémarrer le bot.',
+        ephemeral: true
       });
     }
 
     await interaction.reply({
-      content: '♻️ Redémarrage du bot via Heroku...',
-      flags: InteractionResponseFlags.Ephemeral
+      content: '♻️ Redémarrage du bot en cours...',
+      ephemeral: true
     });
 
-    try {
-      const response = await fetch(`https://api.heroku.com/apps/${appName}/dynos`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/vnd.heroku+json; version=3',
-          'Authorization': `Bearer ${herokuApiKey}`
-        }
-      });
-
-      if (!response.ok) {
-        console.error(`❌ Erreur API Heroku : ${response.statusText}`);
-      } else {
-        console.log('✅ Redémarrage Heroku demandé avec succès');
+    const url = `https://api.heroku.com/apps/${process.env.HEROKU_APP_NAME}/dynos`;
+    const herokuResponse = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${process.env.HEROKU_API_KEY}`,
+        Accept: 'application/vnd.heroku+json; version=3'
       }
-    } catch (error) {
-      console.error('❌ Erreur lors de la tentative de redémarrage :', error);
+    });
+
+    if (herokuResponse.ok) {
+      console.log('♻️ Le bot a été redémarré via /restart');
+    } else {
+      console.error('Erreur lors du redémarrage Heroku :', await herokuResponse.text());
+      await interaction.followUp({
+        content: '❌ Une erreur est survenue lors du redémarrage.',
+        ephemeral: true
+      });
     }
   }
 };

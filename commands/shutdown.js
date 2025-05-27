@@ -1,24 +1,26 @@
-const { SlashCommandBuilder, InteractionResponseFlags } = require('discord.js');
+// commands/shutdown.js
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('shutdown')
-    .setDescription('Éteint complètement le bot'),
+    .setDescription('Éteint le bot')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
-    const ownerId = process.env.OWNER_ID;
-    if (interaction.user.id !== ownerId) {
+    if (interaction.user.id !== process.env.OWNER_ID) {
       return interaction.reply({
-        content: '❌ Tu n\'as pas la permission d\'utiliser cette commande.',
-        flags: InteractionResponseFlags.Ephemeral
+        content: '❌ Tu n\'es pas autorisé à éteindre le bot.',
+        ephemeral: true
       });
     }
 
     await interaction.reply({
       content: '🛑 Bot éteint via /shutdown',
-      flags: InteractionResponseFlags.Ephemeral
+      ephemeral: true
     });
 
-    process.exit(0); // Arrêt complet du bot
+    console.log('🛑 Le bot a été arrêté via /shutdown');
+    process.exit(0);
   }
 };
