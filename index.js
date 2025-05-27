@@ -6,6 +6,8 @@ const fs = require("fs");
 const { updateStatus } = require("./utils/statusUpdater");
 const farewellHandler = require("./commands/farewell");
 const WHITELISTED_GUILDS = ["757261169151967353", "808836895622037504"];
+const { startAutoCheckup, markAsUsed } = require("./utils/autoCheckup");
+
 
 // Création du client
 const client = new Client({
@@ -62,6 +64,7 @@ client.once("ready", () => {
   console.log(`✅ Bot en ligne en tant que ${client.user.tag}`);
   updateStatus(client);
   setInterval(() => updateStatus(client), 3600000);
+  startAutoCheckup(client, "1376825133267681300");
 });
 
 // Vérification des serveurs whitelisted
