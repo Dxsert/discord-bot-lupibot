@@ -3,7 +3,7 @@ const {
   GatewayIntentBits,
   InteractionType,
   Collection,
-} = require('discord.js');
+} = require("discord.js");
 require("dotenv").config();
 const fs = require("fs");
 
@@ -12,6 +12,8 @@ const { updateStatus } = require("./utils/statusUpdater");
 const farewellHandler = require("./events/guildMemberRemove");
 const { startAutoCheckup } = require("./utils/autoCheckup");
 const WHITELISTED_GUILDS = ["757261169151967353", "808836895622037504"];
+const restartChannelId = process.env.RESTART_CHANNEL_ID;
+
 
 // Création du client
 const client = new Client({
@@ -28,13 +30,17 @@ const client = new Client({
 client.commands = new Collection();
 
 // Chargement des commandes
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const commandFiles = fs
+  .readdirSync("./commands")
+  .filter((file) => file.endsWith(".js"));
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
-  if ('data' in command && 'execute' in command) {
+  if ("data" in command && "execute" in command) {
     client.commands.set(command.data.name, command);
   } else {
-    console.warn(`⚠️ La commande dans ${file} est invalide (manque 'data' ou 'execute')`);
+    console.warn(
+      `⚠️ La commande dans ${file} est invalide (manque 'data' ou 'execute')`
+    );
   }
 }
 
@@ -46,7 +52,10 @@ fs.readdirSync("./events").forEach((file) => {
     try {
       event.execute(...args, client);
     } catch (error) {
-      console.error(`Erreur lors de l'exécution de l'event ${event.name} :`, error);
+      console.error(
+        `Erreur lors de l'exécution de l'event ${event.name} :`,
+        error
+      );
     }
   });
 });
@@ -66,31 +75,42 @@ client.on("interactionCreate", async (interaction) => {
   try {
     await command.execute(interaction);
   } catch (error) {
-    console.error(`❌ Erreur dans la commande ${interaction.commandName} :`, error);
+    console.error(
+      `❌ Erreur dans la commande ${interaction.commandName} :`,
+      error
+    );
     if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content: 'Une erreur est survenue.', ephemeral: true });
+      await interaction.followUp({
+        content: "Une erreur est survenue.",
+        ephemeral: true,
+      });
     } else {
-      await interaction.reply({ content: 'Une erreur est survenue.', ephemeral: true });
+      await interaction.reply({
+        content: "Une erreur est survenue.",
+        ephemeral: true,
+      });
     }
   }
 });
 
-// Envoie un message indiquant que le bot a redémarré
-try {
-  if (restartChannelId) {
+// Restart message
+async function sendRestartMessage(client, restartChannelId) {
+  try {
+    if (!restartChannelId) {
+      console.warn("RESTART_CHANNEL_ID non défini.");
+      return;
+    }
     const channel = await client.channels.fetch(restartChannelId);
+    console.log(channel); // debug utile
     if (channel && channel.isTextBased()) {
       await channel.send('✅ Le bot a redémarré avec succès !');
     } else {
       console.warn("Le salon de redémarrage n'est pas un salon texte ou n'existe pas.");
     }
-  } else {
-    console.warn("RESTART_CHANNEL_ID non défini.");
+  } catch (error) {
+    console.error("Erreur lors de l'envoi du message de redémarrage :", error);
   }
-} catch (error) {
-  console.error("Erreur lors de l'envoi du message de redémarrage :", error);
 }
-
 
 // Ready
 client.once("ready", () => {
@@ -98,15 +118,19 @@ client.once("ready", () => {
   updateStatus(client);
   setInterval(() => updateStatus(client), 3600000);
   startAutoCheckup(client, "1376825133267681300");
+  sendRestartMessage(client, restartChannelId);
 });
 
 // Anti-serveurs non whitelisted
 client.on("guildCreate", (guild) => {
   if (!WHITELISTED_GUILDS.includes(guild.id)) {
-    console.log(`❌ Serveur non autorisé : ${guild.name} (${guild.id}). Déconnexion...`);
+    console.log(
+      `❌ Serveur non autorisé : ${guild.name} (${guild.id}). Déconnexion...`
+    );
     guild.leave().catch(console.error);
   }
 });
 
 // Lancement
 client.login(process.env.TOKEN);
+
