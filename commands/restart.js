@@ -1,43 +1,45 @@
 // commands/restart.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const fetch = require('node-fetch');
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { updateStatus } = require("../path/to/statusUpdater");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('restart')
-    .setDescription('Redémarre le bot (Heroku)')
+    .setName("restart")
+    .setDescription("Redémarre le bot")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute(interaction) {
-    if (interaction.user.id !== process.env.OWNER_ID) {
-      return interaction.reply({
-        content: '❌ Tu n\'es pas autorisé à redémarrer le bot.',
-        ephemeral: true
-      });
-    }
-
-    await interaction.reply({
-      content: '♻️ Redémarrage du bot en cours...',
-      ephemeral: true
-    });
-
-    const url = `https://api.heroku.com/apps/${process.env.HEROKU_APP_NAME}/dynos`;
-    const herokuResponse = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${process.env.HEROKU_API_KEY}`,
-        Accept: 'application/vnd.heroku+json; version=3'
+    try {
+      if (interaction.user.id !== process.env.OWNER_ID) {
+        return interaction.reply({
+          content: "❌ Tu n'es pas autorisé à redémarrer le bot.",
+          ephemeral: true,
+        });
       }
-    });
 
-    if (herokuResponse.ok) {
-      console.log('♻️ Le bot a été redémarré via /restart');
-    } else {
-      console.error('Erreur lors du redémarrage Heroku :', await herokuResponse.text());
-      await interaction.followUp({
-        content: '❌ Une erreur est survenue lors du redémarrage.',
-        ephemeral: true
+      await interaction.reply({
+        content: "♻️ Redémarrage du bot en cours...",
+        ephemeral: true,
       });
+
+      // Met le statut "RESTARTING" AVANT de quitter
+      await interaction.client.user.setActivity("RESTARTING", {
+        type: ActivityType.Watching,
+      });
+
+      console.log("♻️ Le bot va redémarrer maintenant.");
+      // Donne un petit délai pour que le statut soit bien mis à jour sur Discord
+      setTimeout(() => {
+        process.exit(0);
+      }, 1500); // 1.5 seconde, tu peux ajuster si besoin
+    } catch (error) {
+      console.error("Erreur dans la commande restart :", error);
+      if (!interaction.replied) {
+        await interaction.reply({
+          content: "❌ Une erreur est survenue lors du redémarrage.",
+          ephemeral: true,
+        });
+      }
     }
-  }
+  },
 };
