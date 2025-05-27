@@ -113,13 +113,20 @@ async function sendRestartMessage(client, restartChannelId) {
 }
 
 // Ready
-client.once("ready", () => {
+client.once("ready", async () => {
   console.log(`✅ Bot en ligne en tant que ${client.user.tag}`);
+
+  // Remet le statut normal (efface le "RESTARTING")
+  await client.user.setActivity(null); // ou updateStatus(client);
+
   updateStatus(client);
   setInterval(() => updateStatus(client), 3600000);
   startAutoCheckup(client, "1376825133267681300");
+
+  // Envoie le message de redémarrage
   sendRestartMessage(client, restartChannelId);
 });
+
 
 // Anti-serveurs non whitelisted
 client.on("guildCreate", (guild) => {
