@@ -1,6 +1,7 @@
 // commands/restart.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const { updateStatus } = require("../utils/statusUpdater");
+const { ActivityType } = require ('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
