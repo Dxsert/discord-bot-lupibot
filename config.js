@@ -1,6 +1,6 @@
 module.exports = {
     FAREWELL_CHANNEL_ID: "808836896149995584" , // Remplcez avec votre ID de canal d'adieu
-
+    WHITELISTED_GUILDS: ["757261169151967353", "808836895622037504"],
 
     farewellMessages: [
         "Bebouuu tu es trop fragile pour nous annoncer ton départ ? :poussin:",

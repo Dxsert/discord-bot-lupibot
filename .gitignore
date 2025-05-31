@@ -1,3 +1,7 @@
 node_modules/
 .env
 .DS_Store
+start-pm2.bat
+procfile
+bfg-1.14.0.jar
+config.js
